@@ -1,6 +1,5 @@
-from sqlalchemy import Column, ForeignKey, Integer, String, DateTime, Enum, Float, Table
+from sqlalchemy import Column, ForeignKey, Integer, String, DateTime, Float, Table
 from sqlalchemy.orm import relationship, declarative_base
-from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy import create_engine
 from eralchemy2 import render_er
 
@@ -41,6 +40,37 @@ people_species_association = Table(
     'people_species', Base.metadata,
     Column('person_id', Integer, ForeignKey('people.id')),
     Column('species_id', Integer, ForeignKey('species.id'))
+)
+
+# Association tables for user favorites
+user_favorite_planets = Table(
+    'user_favorite_planets', Base.metadata,
+    Column('user_id', Integer, ForeignKey('users.id')),
+    Column('planet_id', Integer, ForeignKey('planets.id'))
+)
+
+user_favorite_species = Table(
+    'user_favorite_species', Base.metadata,
+    Column('user_id', Integer, ForeignKey('users.id')),
+    Column('species_id', Integer, ForeignKey('species.id'))
+)
+
+user_favorite_vehicles = Table(
+    'user_favorite_vehicles', Base.metadata,
+    Column('user_id', Integer, ForeignKey('users.id')),
+    Column('vehicle_id', Integer, ForeignKey('vehicles.id'))
+)
+
+user_favorite_starships = Table(
+    'user_favorite_starships', Base.metadata,
+    Column('user_id', Integer, ForeignKey('users.id')),
+    Column('starship_id', Integer, ForeignKey('starships.id'))
+)
+
+user_favorite_films = Table(
+    'user_favorite_films', Base.metadata,
+    Column('user_id', Integer, ForeignKey('users.id')),
+    Column('film_id', Integer, ForeignKey('films.id'))
 )
 
 # People Model
@@ -177,12 +207,27 @@ class Planets(Base):
     films = relationship("Films", secondary=films_planets_association, back_populates="planets")
     residents = relationship("People", back_populates="homeworld")
 
-def to_dict(self):
-    return {}
-# Create the engine and generate the diagram
-try:
-    result = render_er(Base, 'diagram.png')
-    print("Success! Check the diagram.png file")
-except Exception as e:
-    print("There was a problem generating the diagram")
-    raise e
+
+# User Model
+class User(Base):
+    __tablename__ = 'users'
+    id = Column(Integer, primary_key=True)
+    username = Column(String(50), nullable=False, unique=True)
+    email = Column(String(100), nullable=False, unique=True)
+    password = Column(String(100), nullable=False)
+    created_at = Column(DateTime)
+
+    # Relationships with the favorites
+    favorite_planets = relationship('Planets', secondary=user_favorite_planets, back_populates='favorited_by_users')
+    favorite_species = relationship('Species', secondary=user_favorite_species, back_populates='favorited_by_users')
+    favorite_vehicles = relationship('Vehicles', secondary=user_favorite_vehicles, back_populates='favorited_by_users')
+    favorite_starships = relationship('Starships', secondary=user_favorite_starships, back_populates='favorited_by_users')
+    favorite_films = relationship('Films', secondary=user_favorite_films, back_populates='favorited_by_users')
+
+
+# Update Planets, Species, Vehicles, etc., to include 'favorited_by_users'
+Planets.favorited_by_users = relationship('User', secondary=user_favorite_planets, back_populates='favorite_planets')
+Species.favorited_by_users = relationship('User', secondary=user_favorite_species, back_populates='favorite_species')
+Vehicles.favorited_by_users = relationship('User', secondary=user_favorite_vehicles, back_populates='favorite_vehicles')
+Starships.favorited_by_users = relationship('User', secondary=user_favorite_starships, back_populates='favorite_starships')
+Films.favorited_by_users = relationship('User', secondary=user_favorite_films, back_populates='favorite_films')
